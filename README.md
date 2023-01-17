@@ -26,4 +26,5 @@ We're going to use the following datasets:
 
 ## Results
 The results are shown in the following table:
+
 ![Image with the result](imgs/result.png)
