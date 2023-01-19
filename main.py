@@ -5,12 +5,13 @@
 # Importing libraries
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import AdaBoostRegressor
 
 # Importing models
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB, ComplementNB
 from sklearn.tree import DecisionTreeRegressor
+
+# Optimizing models
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 
 # Importing datasets
@@ -19,8 +20,8 @@ from sklearn.datasets import load_iris
 # Importing metrics
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-# Importing train_test_split
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import AdaBoostRegressor
 
 PREDICT_DATASETS = {
     'Iris': {
