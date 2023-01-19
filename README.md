@@ -11,6 +11,13 @@ We're going to use the following models:
     2. Multinomial
     3. Bernoulli
     4. Complement
+3. Decision Tree
+4. Random Forest
+
+## Optimization of the models
+We're going to use the following optimization methods:
+1. Grid Search
+2. Random Search
 
 ## Datasets
 We're going to use the following datasets:
