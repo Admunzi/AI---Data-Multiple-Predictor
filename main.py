@@ -9,7 +9,7 @@ import numpy as np
 # Importing models
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB, ComplementNB
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 
 # Optimizing models
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
@@ -21,7 +21,7 @@ from sklearn.datasets import load_iris
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import AdaBoostRegressor
+from sklearn.ensemble import AdaBoostClassifier
 
 PREDICT_DATASETS = {
     'Iris': {
@@ -43,27 +43,60 @@ PREDICT_DATASETS = {
 }
 
 MODELS = {
-    'KNN Weights Uniform': KNeighborsClassifier(n_neighbors=5, weights='uniform'),
-    'KNN Weights Normal': KNeighborsClassifier(n_neighbors=5, weights='distance'),
-    'Naive Bayes GaussianNB': GaussianNB(),
-    'Naive Bayes MultinomialNB': MultinomialNB(),
-    'Naive Bayes BernoulliNB': BernoulliNB(),
-    'Naive Bayes ComplementNB': ComplementNB(),
-    'Decision Tree Regressor': DecisionTreeRegressor(),
-    'DecisionTreeRegressor AdaBoostRegressor GridSearchCV': GridSearchCV(
-        estimator=AdaBoostRegressor(DecisionTreeRegressor()),
-        param_grid={
+    'KNN': {
+        'model': KNeighborsClassifier(),
+        'type': 'classification',
+        'cross_name': 'GridSearchCV',
+        'params_cross': {
+            'n_neighbors': np.arange(1, 25),
+            'weights': ['uniform', 'distance'],
+        },
+        'cv_cross': 5
+    },
+    'Naive Bayes GaussianNB': {
+        'model': GaussianNB(),
+        'type': 'classification',
+    },
+    'Naive Bayes MultinomialNB': {
+        'model': MultinomialNB(),
+        'type': 'classification',
+    },
+    'Naive Bayes BernoulliNB': {
+        'model': BernoulliNB(),
+        'type': 'classification',
+    },
+    'Naive Bayes ComplementNB': {
+        'model': ComplementNB(),
+        'type': 'classification',
+    },
+    'DecisionTree Classifier': {
+        'model': DecisionTreeClassifier(),
+        'type': 'classification'
+    },
+    'DecisionTree Regressor': {
+        'model': DecisionTreeRegressor(),
+        'type': 'regression'
+    },
+    'DecisionTreeClassifier AdaBoostClassifier GridSearchCV': {
+        'model': AdaBoostClassifier(DecisionTreeClassifier()),
+        'type': 'classification',
+        'cross_name': 'GridSearchCV',
+        'params_cross': {
             'n_estimators': [8, 32, 64, 128, 256],
             'learning_rate': [0.01, 0.05, 0.1, 0.15, 0.25, 1]
         },
-        cv=5),
-    'DecisionTreeRegressor AdaBoostRegressor RandomizedSearchCV': RandomizedSearchCV(
-        estimator=AdaBoostRegressor(DecisionTreeRegressor()),
-        param_distributions={
+        'cv_cross': 5,
+    },
+    'DecisionTreeClassifier AdaBoostClassifier RandomizedSearchCV': {
+        'model': AdaBoostClassifier(DecisionTreeClassifier()),
+        'type': 'classification',
+        'cross_name': 'RandomizedSearchCV',
+        'params_cross': {
             'n_estimators': [8, 32, 64, 128, 256],
             'learning_rate': [0.01, 0.05, 0.1, 0.15, 0.25, 1]
         },
-        cv=5),
+        'cv_cross': 5,
+    }
 }
 
 
@@ -95,16 +128,38 @@ def fit_and_predict(split_datasets):
 
     for dataset_name, splits in split_datasets.items():
         predictions[dataset_name] = {}
-        for model_name, model in MODELS.items():
+        for model_name, model_dict in MODELS.items():
+            model = model_dict['model']
+            if 'cross_name' in model_dict:
+                model = model_cross(model, model_dict)
+
             model.fit(splits['X_train'], splits['y_train'])
             y_pred = model.predict(splits['X_test'])
 
-            predictions[dataset_name][model_name] = [
-                accuracy_score(splits['y_test'], y_pred),
-                mean_absolute_error(splits['y_test'], y_pred)
-            ]
+            create_metrics(dataset_name, model_dict, model_name, predictions, splits, y_pred)
 
     return predictions
+
+
+def create_metrics(dataset_name, model_dict, model_name, predictions, splits, y_pred):
+    # We want show too roc_auc_score
+    if model_dict['type'] == 'classification':
+        predictions[dataset_name][model_name] = [accuracy_score(splits['y_test'], y_pred), '']
+    else:
+        predictions[dataset_name][model_name] = ['', mean_absolute_error(splits['y_test'], y_pred)]
+
+
+def model_cross(model, model_dict):
+    cross_name = model_dict['cross_name']
+    params_cross = model_dict['params_cross']
+    cv_cross = model_dict['cv_cross']
+    cross = None
+
+    if cross_name == 'GridSearchCV':
+        cross = GridSearchCV(model, params_cross, cv=cv_cross)
+    elif cross_name == 'RandomizedSearchCV':
+        cross = RandomizedSearchCV(model, params_cross, cv=cv_cross, n_iter=10)
+    return cross
 
 
 def show_results(predictions):
